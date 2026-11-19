@@ -1,0 +1,28 @@
+# IDE and OS files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Local environment and logs
+.env
+.env.*
+!.env.example
+*.log
+
+# Backend build output
+/backend/target/
+
+# Local H2 database files
+*.mv.db
+*.trace.db
+
+# Frontend dependencies and build output
+/frontend/node_modules/
+/frontend/.next/
+/frontend/out/
+/frontend/build/
+/frontend/coverage/
+/frontend/next-env.d.ts
+*.tsbuildinfo
+.vercel/
