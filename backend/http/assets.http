@@ -1,0 +1,97 @@
+### Create a stock
+POST {{baseUrl}}/api/assets
+Content-Type: application/json
+
+{
+  "type": "STOCK",
+  "symbol": "aapl",
+  "name": "Apple Inc.",
+  "sector": "Technology",
+  "currency": "usd",
+  "exchange": "NASDAQ"
+}
+
+> {%
+    client.test("Stock created", () => {
+        client.assert(response.status === 201, "Expected HTTP 201");
+        client.assert(response.body.symbol === "AAPL", "Symbol should be upper case");
+    });
+%}
+
+### Create an ETF
+POST {{baseUrl}}/api/assets
+Content-Type: application/json
+
+{
+  "type": "ETF",
+  "symbol": "VOO",
+  "name": "Vanguard S&P 500 ETF",
+  "sector": "Broad Market",
+  "currency": "USD",
+  "expenseRatio": 0.00030
+}
+
+### Create a bond
+POST {{baseUrl}}/api/assets
+Content-Type: application/json
+
+{
+  "type": "BOND",
+  "symbol": "US10Y",
+  "name": "US Treasury 10 Year",
+  "sector": "Government Bonds",
+  "currency": "USD",
+  "couponRate": 0.04250,
+  "maturityDate": "2035-11-15"
+}
+
+### List all assets
+GET {{baseUrl}}/api/assets
+
+### List only ETFs
+GET {{baseUrl}}/api/assets?type=ETF
+
+### Get one asset
+GET {{baseUrl}}/api/assets/aapl
+
+### Update an asset
+PUT {{baseUrl}}/api/assets/AAPL
+Content-Type: application/json
+
+{
+  "name": "Apple Inc.",
+  "sector": "Information Technology",
+  "currency": "USD",
+  "exchange": "NASDAQ"
+}
+
+### Duplicate symbol (expect 409)
+POST {{baseUrl}}/api/assets
+Content-Type: application/json
+
+{
+  "type": "STOCK",
+  "symbol": "AAPL",
+  "name": "Apple again",
+  "sector": "Technology",
+  "currency": "USD"
+}
+
+### Invalid request (expect 400 with field errors)
+POST {{baseUrl}}/api/assets
+Content-Type: application/json
+
+{
+  "type": "BOND",
+  "symbol": "",
+  "name": "Broken bond",
+  "sector": "Government Bonds",
+  "currency": "DOLLARS",
+  "couponRate": 2
+}
+
+### Unknown asset (expect 404)
+GET {{baseUrl}}/api/assets/NOPE
+
+### Delete an asset
+DELETE {{baseUrl}}/api/assets/US10Y

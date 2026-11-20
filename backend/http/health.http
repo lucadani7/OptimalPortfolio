@@ -1,0 +1,13 @@
+### Application health
+GET {{baseUrl}}/actuator/health
+Accept: application/json
+
+### OpenAPI specification
+GET {{baseUrl}}/v3/api-docs
+Accept: application/json
+
+### Prometheus metrics
+GET {{baseUrl}}/actuator/prometheus
+
+### JobRunr dashboard
+GET {{jobrunrUrl}}
