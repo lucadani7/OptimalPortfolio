@@ -1,6 +1,6 @@
 "use client";
 
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { PricePoint } from "@/lib/types";
 
@@ -11,54 +11,51 @@ interface PriceChartProps {
 
 export function PriceChart({ prices, currency }: PriceChartProps) {
   if (prices.length === 0) {
-    return <p className="py-16 text-center text-sm text-zinc-500">No prices in this period.</p>;
+    return <p className="py-24 text-center text-muted">There are no prices in this period. Choose a longer one.</p>;
   }
 
-  const rising = prices[prices.length - 1].close >= prices[0].close;
-  const color = rising ? "#059669" : "#dc2626";
-
   return (
-    <div className="h-80 w-full">
+    <div className="h-64 w-full sm:h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={prices} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <defs>
-            <linearGradient id="priceFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.25} />
-              <stop offset="100%" stopColor={color} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
+        <LineChart data={prices} margin={{ top: 12, right: 12, bottom: 4, left: 4 }}>
+          <CartesianGrid stroke="var(--rule)" strokeOpacity={0.6} vertical={false} />
           <XAxis
             dataKey="date"
             tickFormatter={(date: string) => formatDate(date)}
-            minTickGap={48}
-            tick={{ fontSize: 12 }}
-            stroke="currentColor"
-            strokeOpacity={0.4}
+            minTickGap={56}
+            tick={{ fontSize: 12, fill: "var(--muted)" }}
+            axisLine={{ stroke: "var(--rule)" }}
+            tickLine={false}
           />
           <YAxis
             domain={["auto", "auto"]}
             tickFormatter={(value: number) => formatMoney(value, currency)}
-            width={88}
-            tick={{ fontSize: 12 }}
-            stroke="currentColor"
-            strokeOpacity={0.4}
+            width={84}
+            tick={{ fontSize: 12, fill: "var(--muted)" }}
+            axisLine={false}
+            tickLine={false}
           />
           <Tooltip
             labelFormatter={(date) => formatDate(String(date))}
             formatter={(value) => [formatMoney(Number(value), currency), "Close"]}
-            contentStyle={{ borderRadius: 8, fontSize: 13 }}
+            contentStyle={{
+              background: "var(--panel)",
+              border: "1px solid var(--rule)",
+              borderRadius: 6,
+              fontSize: 13,
+              color: "var(--ink)",
+            }}
           />
-          <Area
+          <Line
             type="monotone"
             dataKey="close"
-            stroke={color}
-            strokeWidth={2}
-            fill="url(#priceFill)"
+            stroke="var(--steel)"
+            strokeWidth={1.75}
             dot={false}
+            activeDot={{ r: 4, fill: "var(--signal)", stroke: "var(--panel)", strokeWidth: 2 }}
             isAnimationActive={false}
           />
-        </AreaChart>
+        </LineChart>
       </ResponsiveContainer>
     </div>
   );

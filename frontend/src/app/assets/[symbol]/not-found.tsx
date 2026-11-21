@@ -2,11 +2,11 @@ import Link from "next/link";
 
 export default function AssetNotFound() {
   return (
-    <div className="space-y-4 py-16 text-center">
-      <h1 className="text-2xl font-semibold">Asset not found</h1>
-      <p className="text-zinc-600 dark:text-zinc-400">There is no asset with this symbol.</p>
-      <Link href="/assets" className="inline-flex text-sm font-medium text-sky-700 hover:underline dark:text-sky-400">
-        Back to all assets
+    <div className="max-w-xl space-y-4 py-12">
+      <h1 className="text-[28px] leading-tight font-extrabold tracking-[-0.025em] sm:text-[35px]">No asset with this symbol</h1>
+      <p className="text-muted">Check the spelling, or pick the asset from the full list.</p>
+      <Link href="/assets" className="inline-flex font-semibold text-steel hover:underline">
+        See all assets
       </Link>
     </div>
   );

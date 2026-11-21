@@ -14,14 +14,29 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * GET request from a Server Component. Calls the backend directly (no proxy) and
- * renders at request time, so pages always show current data and the build never calls the backend.
- */
+/** GET request from a Server Component. */
 export async function apiGet<T>(path: string): Promise<T> {
+  return request<T>(path, { method: "GET" });
+}
+
+/** POST request from a Server Component, e.g. to compute something for the page. */
+export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  return request<T>(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+/**
+ * Calls the backend directly (no proxy) and renders at request time, so pages always show
+ * current data and the build never calls the backend.
+ */
+async function request<T>(path: string, init: RequestInit): Promise<T> {
   await connection();
   const response = await fetch(`${BACKEND_URL}${path}`, {
-    headers: { Accept: "application/json" },
+    ...init,
+    headers: { Accept: "application/json", ...init.headers },
     cache: "no-store",
   });
   if (!response.ok) {

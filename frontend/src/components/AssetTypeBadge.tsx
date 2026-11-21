@@ -1,13 +1,18 @@
 import type { AssetType } from "@/lib/types";
 
-const STYLES: Record<AssetType, string> = {
-  STOCK: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300",
-  ETF: "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300",
-  BOND: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+/** Each kind of asset keeps its own colour everywhere it appears. */
+const KINDS: Record<AssetType, { label: string; color: string }> = {
+  STOCK: { label: "Stock", color: "var(--steel)" },
+  ETF: { label: "ETF", color: "var(--gain)" },
+  BOND: { label: "Bond", color: "var(--signal)" },
 };
 
 export function AssetTypeBadge({ type }: { type: AssetType }) {
+  const kind = KINDS[type];
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STYLES[type]}`}>{type}</span>
+    <span className="inline-flex items-center gap-1.5 text-[13px] text-muted">
+      <span className="size-2 rounded-full" style={{ backgroundColor: kind.color }} aria-hidden="true" />
+      {kind.label}
+    </span>
   );
 }

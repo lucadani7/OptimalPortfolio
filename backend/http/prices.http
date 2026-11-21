@@ -7,8 +7,20 @@ GET {{baseUrl}}/api/assets/AAPL/prices?from=2026-01-01&to=2026-03-31
 ### Invalid range (expect 400)
 GET {{baseUrl}}/api/assets/AAPL/prices?from=2026-03-31&to=2026-01-01
 
+### Create a throwaway asset for the import tests
+POST {{baseUrl}}/api/assets
+Content-Type: application/json
+
+{
+  "type": "STOCK",
+  "symbol": "TESTIMP",
+  "name": "Import test",
+  "sector": "Testing",
+  "currency": "USD"
+}
+
 ### Import prices (inserts new dates, overwrites existing ones)
-POST {{baseUrl}}/api/assets/AAPL/prices
+POST {{baseUrl}}/api/assets/TESTIMP/prices
 Content-Type: application/json
 
 {
@@ -19,7 +31,7 @@ Content-Type: application/json
 }
 
 ### Invalid import (expect 400 with field errors)
-POST {{baseUrl}}/api/assets/AAPL/prices
+POST {{baseUrl}}/api/assets/TESTIMP/prices
 Content-Type: application/json
 
 {
@@ -30,3 +42,6 @@ Content-Type: application/json
 
 ### Prices for an unknown asset (expect 404)
 GET {{baseUrl}}/api/assets/NOPE/prices
+
+### Remove the throwaway asset and its prices
+DELETE {{baseUrl}}/api/assets/TESTIMP

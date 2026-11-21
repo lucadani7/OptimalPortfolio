@@ -60,7 +60,7 @@ Content-Type: application/json
 
 {
   "name": "Apple Inc.",
-  "sector": "Information Technology",
+  "sector": "Technology",
   "currency": "USD",
   "exchange": "NASDAQ"
 }

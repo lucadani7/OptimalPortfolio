@@ -1,58 +1,70 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Schibsted_Grotesk } from "next/font/google";
 import Link from "next/link";
+import { NavLinks } from "@/components/NavLinks";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const schibsted = Schibsted_Grotesk({
+  variable: "--font-schibsted",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: { default: "Optimal Portfolio", template: "%s · Optimal Portfolio" },
+  title: { default: "Optimal Portfolio", template: "%s | Optimal Portfolio" },
   description: "Build risk/reward balanced portfolios with Markowitz optimization and constraint programming.",
+  // The app has its own dark theme. This tag tells the Dark Reader extension to leave the page alone,
+  // instead of rewriting colours (and every SVG) before React hydrates.
+  other: { "darkreader-lock": "true" },
 };
 
-const NAV_LINKS = [
-  { href: "/", label: "Overview" },
-  { href: "/assets", label: "Assets" },
-];
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
+/**
+ * Applies the saved theme before the first paint, so a page never flashes in the wrong theme.
+ * Kept tiny and dependency-free because it runs before anything else.
+ */
+const THEME_SCRIPT = `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+
+/** A small efficient-frontier curve with the chosen portfolio marked: the mark of the product. */
+function Logo() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-6 shrink-0" aria-hidden="true">
+      <path d="M3 21 L3 3 M3 21 L21 21" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.5" fill="none" />
+      <path d="M6 18 C 8 10, 12 7, 20 5" stroke="var(--steel)" strokeWidth="2" fill="none" strokeLinecap="round" />
+      <circle cx="11.2" cy="9.6" r="2.4" fill="var(--signal)" />
+    </svg>
+  );
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    // Browser extensions (e.g. Dark Reader) add attributes to <html> and <body> before React hydrates;
+    // The theme script and browser extensions change attributes of <html> and <body> before React hydrates;
     // suppressHydrationWarning ignores those attribute differences on these two elements only.
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      suppressHydrationWarning
-    >
-      <body
-        className="flex min-h-full flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"
-        suppressHydrationWarning
-      >
-        <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-          <nav className="mx-auto flex max-w-6xl items-center gap-8 px-6 py-4">
-            <Link href="/" className="text-lg font-semibold tracking-tight">
+    <html lang="en" className={`${schibsted.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
+      <body className="flex min-h-full flex-col" suppressHydrationWarning>
+        <header className="border-b border-rule bg-paper">
+          {/* On phones: logo and theme switcher on the first row, navigation on its own row below */}
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 px-4 sm:flex-nowrap sm:px-6">
+            <Link href="/" className="flex items-center gap-2.5 py-3 text-[16px] font-bold tracking-[-0.01em]">
+              <Logo />
               Optimal Portfolio
             </Link>
-            <ul className="flex gap-6 text-sm text-zinc-600 dark:text-zinc-400">
-              {NAV_LINKS.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="hover:text-zinc-900 dark:hover:text-zinc-100">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+            <nav aria-label="Main" className="order-last -mx-3 w-[calc(100%+1.5rem)] overflow-x-auto sm:order-none sm:mx-0 sm:w-auto">
+              <NavLinks />
+            </nav>
+            <div className="ml-auto">
+              <ThemeToggle />
+            </div>
+          </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-8 pb-16 sm:px-6 sm:pt-12 sm:pb-20">{children}</main>
       </body>
     </html>
   );
