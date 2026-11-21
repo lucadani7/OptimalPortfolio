@@ -87,7 +87,7 @@ public class AssetService {
         assetRepository.delete(getAsset(symbol));
     }
 
-    private Asset getAsset(String symbol) {
+    public Asset getAsset(String symbol) {
         String normalized = normalize(symbol);
         return assetRepository.findBySymbol(normalized).orElseThrow(() -> new ResourceNotFoundException("Asset", normalized));
     }

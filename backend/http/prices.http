@@ -1,0 +1,32 @@
+### All prices for an asset
+GET {{baseUrl}}/api/assets/AAPL/prices
+
+### Prices in a date range
+GET {{baseUrl}}/api/assets/AAPL/prices?from=2026-01-01&to=2026-03-31
+
+### Invalid range (expect 400)
+GET {{baseUrl}}/api/assets/AAPL/prices?from=2026-03-31&to=2026-01-01
+
+### Import prices (inserts new dates, overwrites existing ones)
+POST {{baseUrl}}/api/assets/AAPL/prices
+Content-Type: application/json
+
+{
+  "prices": [
+    { "date": "2026-11-16", "close": 231.45 },
+    { "date": "2026-11-17", "close": 233.10 }
+  ]
+}
+
+### Invalid import (expect 400 with field errors)
+POST {{baseUrl}}/api/assets/AAPL/prices
+Content-Type: application/json
+
+{
+  "prices": [
+    { "date": null, "close": -5 }
+  ]
+}
+
+### Prices for an unknown asset (expect 404)
+GET {{baseUrl}}/api/assets/NOPE/prices
