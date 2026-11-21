@@ -1,0 +1,25 @@
+### Statistics for the last year (default period)
+GET {{baseUrl}}/api/statistics?symbols=AAPL,MSFT,VOO,BND,GLD
+
+> {%
+    client.test("Statistics computed", () => {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.symbols.length === 5, "Expected 5 assets");
+        client.assert(response.body.correlation[0][0] === 1, "Diagonal of the correlation matrix must be 1");
+    });
+%}
+
+### Same request again (should be served from the cache, noticeably faster)
+GET {{baseUrl}}/api/statistics?symbols=AAPL,MSFT,VOO,BND,GLD
+
+### Explicit period, lower-case symbols and a duplicate
+GET {{baseUrl}}/api/statistics?symbols=aapl,voo,AAPL&from=2025-01-01&to=2026-06-30
+
+### Unknown symbol (expect 404)
+GET {{baseUrl}}/api/statistics?symbols=AAPL,NOPE
+
+### Inverted period (expect 400)
+GET {{baseUrl}}/api/statistics?symbols=AAPL&from=2026-06-30&to=2025-01-01
+
+### Period without enough prices (expect 400)
+GET {{baseUrl}}/api/statistics?symbols=AAPL&from=2020-01-01&to=2020-01-31

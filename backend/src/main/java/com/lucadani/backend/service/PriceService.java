@@ -7,6 +7,7 @@ import com.lucadani.backend.web.dto.PriceImportResponse;
 import com.lucadani.backend.web.dto.PricePointResponse;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +50,7 @@ public class PriceService {
 
     /** Inserts new prices and overwrites existing ones for the same dates. */
     @Transactional
+    @CacheEvict(cacheNames = StatisticsService.CACHE_NAME, allEntries = true)
     public PriceImportResponse importPrices(String symbol, List<PriceEntry> prices) {
         Asset asset = assetService.getAsset(symbol);
         Long assetId = asset.getId();

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,4 +19,6 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     /** Polymorphic query: returns only the assets of the given concrete class. */
     @Query("select a from Asset a where type(a) = :type order by a.symbol")
     List<Asset> findAllOfType(@Param("type") Class<? extends Asset> type);
+
+    List<Asset> findAllBySymbolIn(Collection<String> symbols);
 }

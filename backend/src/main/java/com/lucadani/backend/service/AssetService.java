@@ -8,6 +8,7 @@ import com.lucadani.backend.web.dto.AssetResponse;
 import com.lucadani.backend.web.dto.CreateAssetRequest;
 import com.lucadani.backend.web.dto.UpdateAssetRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,6 +84,7 @@ public class AssetService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = StatisticsService.CACHE_NAME, allEntries = true)
     public void delete(String symbol) {
         assetRepository.delete(getAsset(symbol));
     }
