@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { FrontierChart } from "@/components/FrontierChart";
 import { WeightBars } from "@/components/WeightBars";
 import { apiPost } from "@/lib/client-api";
 import { formatMoney, formatPercent } from "@/lib/format";
+import { traceFrontier } from "@/lib/optimization-jobs";
 import { strategyLabel } from "@/lib/strategies";
 import type {
   AllocationRequest,
@@ -35,8 +36,11 @@ interface SectorLimitInput {
 interface Analysis {
   request: OptimizationRequest;
   result: OptimizationResult;
+  /** Traced in the background; null until the job succeeds. */
   frontier: Frontier | null;
   frontierError: string | null;
+  /** Percentage of the frontier traced so far. */
+  frontierProgress: number;
 }
 
 const LOOKBACK_YEARS = [1, 2, 3] as const;
@@ -79,6 +83,9 @@ export function Optimizer({ assets, strategies }: OptimizerProps) {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [optimizing, startOptimizing] = useTransition();
+  // Cancels the frontier of the previous optimization when a new one starts, or when leaving the page
+  const frontierAbort = useRef<AbortController | null>(null);
+  useEffect(() => () => frontierAbort.current?.abort(), []);
 
   const [budget, setBudget] = useState("10000");
   const [allocation, setAllocation] = useState<AllocationResult | null>(null);
@@ -143,33 +150,43 @@ export function Optimizer({ assets, strategies }: OptimizerProps) {
     setError(null);
     setAllocation(null);
     setSaved(null);
+    frontierAbort.current?.abort();
+    const controller = new AbortController();
+    frontierAbort.current = controller;
     startOptimizing(async () => {
       try {
         const request = buildRequest();
-        const frontierRequest: FrontierRequest = {
-          symbols: request.symbols,
-          from: request.from,
-          constraints: request.constraints,
-          riskFreeRate: request.riskFreeRate,
-          points: FRONTIER_POINTS,
-        };
-        // The frontier is optional context: a failure there should not hide the optimization result
-        const [result, frontier] = await Promise.allSettled([
-          apiPost<OptimizationResult>("/api/optimization/run", request),
-          apiPost<Frontier>("/api/optimization/frontier", frontierRequest),
-        ]);
-        if (result.status === "rejected") throw result.reason;
-        setAnalysis({
-          request,
-          result: result.value,
-          frontier: frontier.status === "fulfilled" ? frontier.value : null,
-          frontierError: frontier.status === "rejected" ? errorMessage(frontier.reason) : null,
-        });
+        const result = await apiPost<OptimizationResult>("/api/optimization/run", request);
+        setAnalysis({ request, result, frontier: null, frontierError: null, frontierProgress: 0 });
+        void loadFrontier(request, controller.signal);
       } catch (e) {
         setAnalysis(null);
         setError(errorMessage(e));
       }
     });
+  }
+
+  /**
+   * Traces the frontier as a background job. It is optional context: a failure there is shown
+   * in place of the chart and does not hide the optimization result.
+   */
+  async function loadFrontier(request: OptimizationRequest, signal: AbortSignal) {
+    // Only updates the analysis it was started for, never a newer one
+    const update = (change: Partial<Analysis>) =>
+      setAnalysis((current) => (current?.request === request ? { ...current, ...change } : current));
+    const frontierRequest: FrontierRequest = {
+      symbols: request.symbols,
+      from: request.from,
+      constraints: request.constraints,
+      riskFreeRate: request.riskFreeRate,
+      points: FRONTIER_POINTS,
+    };
+    try {
+      const frontier = await traceFrontier(frontierRequest, (percent) => update({ frontierProgress: percent }), signal);
+      update({ frontier });
+    } catch (e) {
+      if (!signal.aborted) update({ frontierError: errorMessage(e) });
+    }
   }
 
   function allocationRequest(): AllocationRequest {
@@ -432,10 +449,29 @@ export function Optimizer({ assets, strategies }: OptimizerProps) {
                       label: "Your portfolio",
                     }}
                   />
-                ) : (
+                ) : analysis.frontierError ? (
                   <p className="py-16 text-center text-muted">
                     The efficient frontier could not be traced: {analysis.frontierError}
                   </p>
+                ) : (
+                  <div className="flex flex-col items-center gap-3 py-16">
+                    <p id="frontier-progress-label" className="text-[14px] text-muted">
+                      Tracing the efficient frontier, <span className="tabular-nums">{analysis.frontierProgress}%</span>
+                    </p>
+                    <div
+                      role="progressbar"
+                      aria-labelledby="frontier-progress-label"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={analysis.frontierProgress}
+                      className="h-1.5 w-64 max-w-full overflow-hidden rounded-full bg-steel-soft"
+                    >
+                      <div
+                        className="h-full bg-steel transition-[width] duration-200"
+                        style={{ width: `${analysis.frontierProgress}%` }}
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
             </section>

@@ -1,0 +1,61 @@
+### Start tracing the frontier in the background
+POST {{baseUrl}}/api/optimization/jobs/frontier
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "MSFT", "JNJ", "XOM", "VOO", "BND"],
+  "constraints": [{ "type": "WEIGHT_BOUNDS", "min": 0, "max": 0.4 }],
+  "riskFreeRate": 0.04,
+  "points": 100
+}
+
+> {%
+    client.test("Job accepted", () => {
+        client.assert(response.status === 202);
+        client.assert(response.headers.valueOf("Location").endsWith("/api/optimization/jobs/" + response.body.id));
+    });
+    client.global.set("frontierJobId", response.body.id);
+%}
+
+### Follow the job: the stream starts with the current state and closes once the job has finished
+GET {{baseUrl}}/api/optimization/jobs/{{frontierJobId}}/events
+Accept: text/event-stream
+
+### The finished job, with the frontier
+GET {{baseUrl}}/api/optimization/jobs/{{frontierJobId}}
+
+> {%
+    client.test("Job succeeded", () => {
+        client.assert(response.body.status === "SUCCEEDED", "Status: " + response.body.status);
+        client.assert(response.body.progress === 100);
+        client.assert(response.body.frontier.points.length > 1);
+    });
+%}
+
+### A job that cannot be solved fails with a message (no portfolio returns 500% a year)
+POST {{baseUrl}}/api/optimization/jobs/frontier
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "MSFT"],
+  "constraints": [{ "type": "MIN_EXPECTED_RETURN", "value": 5 }]
+}
+
+> {% client.global.set("failingJobId", response.body.id); %}
+
+### Its stream ends with status FAILED and the reason in "error"
+GET {{baseUrl}}/api/optimization/jobs/{{failingJobId}}/events
+Accept: text/event-stream
+
+### An unknown job
+GET {{baseUrl}}/api/optimization/jobs/00000000-0000-0000-0000-000000000000
+
+> {% client.test("Not found", () => client.assert(response.status === 404)); %}
+
+### Invalid input is rejected before a job is created
+POST {{baseUrl}}/api/optimization/jobs/frontier
+Content-Type: application/json
+
+{ "symbols": [] }
+
+> {% client.test("Bad request", () => client.assert(response.status === 400)); %}

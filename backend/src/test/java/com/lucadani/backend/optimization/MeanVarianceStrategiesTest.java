@@ -7,6 +7,9 @@ import com.lucadani.backend.optimization.PortfolioConstraint.SectorLimit;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.IntStream;
 
 import static com.lucadani.backend.optimization.OptimizationProblemTest.SECTORS;
 import static com.lucadani.backend.optimization.OptimizationProblemTest.twoAssets;
@@ -84,6 +87,18 @@ class MeanVarianceStrategiesTest {
                     .isGreaterThanOrEqualTo(points.get(k - 1).evaluation().expectedReturn() - SOLVER_TOLERANCE);
             assertThat(points.get(k).evaluation().feasible()).isTrue();
         }
+    }
+
+    @Test
+    void frontierReportsEverySolvedPoint() {
+        Set<Integer> reported = ConcurrentHashMap.newKeySet();
+        frontier.trace(problem(List.of()), 11, (completed, total) -> {
+            assertThat(total).isEqualTo(11);
+            reported.add(completed);
+        });
+
+        // 0 before the first point, then once per point (in any order, as points are solved in parallel)
+        assertThat(reported).containsExactlyInAnyOrderElementsOf(IntStream.rangeClosed(0, 11).boxed().toList());
     }
 
     @Test

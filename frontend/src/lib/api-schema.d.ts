@@ -68,6 +68,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/optimization/jobs/frontier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start tracing the efficient frontier in the background */
+        post: operations["traceFrontier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/optimization/frontier": {
         parameters: {
             query?: never;
@@ -94,6 +111,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["allocate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/market-data/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["importNow"];
         delete?: never;
         options?: never;
         head?: never;
@@ -156,6 +189,43 @@ export interface paths {
             cookie?: never;
         };
         get: operations["strategies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/optimization/jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a job, with its result once it has succeeded */
+        get: operations["get_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/optimization/jobs/{id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Follow a job as server-sent events
+         * @description Each "job" event holds jobId, status, progress (a percentage) and error. The stream starts with the current state and closes once the job has finished.
+         */
+        get: operations["events"];
         put?: never;
         post?: never;
         delete?: never;
@@ -392,6 +462,24 @@ export interface components {
             assets?: components["schemas"]["AssetPoint"][];
             points?: components["schemas"]["Point"][];
         };
+        OptimizationJobResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            kind?: "FRONTIER";
+            /** @enum {string} */
+            status?: "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED";
+            /** Format: int32 */
+            progress?: number;
+            error?: string;
+            frontier?: components["schemas"]["FrontierResponse"];
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: date-time */
+            finishedAt?: string;
+        };
         Point: {
             /** Format: double */
             expectedReturn?: number;
@@ -436,6 +524,9 @@ export interface components {
             targetWeight?: number;
             /** Format: double */
             actualWeight?: number;
+        };
+        ImportStartedResponse: {
+            jobId?: string;
         };
         BondRequest: Omit<components["schemas"]["CreateAssetRequest"], "type"> & {
             symbol: string;
@@ -536,6 +627,10 @@ export interface components {
         StrategyResponse: {
             name?: string;
             description?: string;
+        };
+        SseEmitter: {
+            /** Format: int64 */
+            timeout?: number;
         };
         PricePointResponse: {
             /** Format: date */
@@ -755,6 +850,30 @@ export interface operations {
             };
         };
     };
+    traceFrontier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FrontierRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OptimizationJobResponse"];
+                };
+            };
+        };
+    };
     frontier: {
         parameters: {
             query?: never;
@@ -803,10 +922,30 @@ export interface operations {
             };
         };
     };
+    importNow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImportStartedResponse"];
+                };
+            };
+        };
+    };
     list_1: {
         parameters: {
             query?: {
-                type?: "STOCK" | "ETF" | "BOND";
+                type?: "STOCK" | "ETF" | "BOND" | null;
             };
             header?: never;
             path?: never;
@@ -940,6 +1079,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["StrategyResponse"][];
+                };
+            };
+        };
+    };
+    get_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OptimizationJobResponse"];
+                };
+            };
+        };
+    };
+    events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["SseEmitter"];
                 };
             };
         };

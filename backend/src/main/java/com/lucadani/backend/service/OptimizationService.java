@@ -9,6 +9,7 @@ import com.lucadani.backend.optimization.OptimizationProblem;
 import com.lucadani.backend.optimization.OptimizationResult;
 import com.lucadani.backend.optimization.OptimizationStrategy;
 import com.lucadani.backend.optimization.PortfolioConstraint;
+import com.lucadani.backend.optimization.ProgressListener;
 import com.lucadani.backend.repository.AssetRepository;
 import com.lucadani.backend.repository.PricePointRepository;
 import com.lucadani.backend.repository.PriceRow;
@@ -97,8 +98,14 @@ public class OptimizationService {
     /** Traces the efficient frontier for the given assets, period and constraints. */
     public FrontierRun frontier(StatisticsQuery query, List<PortfolioConstraint> constraints,
                                 double riskFreeRate, int points) {
+        return frontier(query, constraints, riskFreeRate, points, ProgressListener.NONE);
+    }
+
+    /** Same as above, reporting each solved point of the frontier to {@code listener}. */
+    public FrontierRun frontier(StatisticsQuery query, List<PortfolioConstraint> constraints,
+                                double riskFreeRate, int points, ProgressListener listener) {
         OptimizationProblem problem = buildProblem(query, constraints, riskFreeRate);
-        return new FrontierRun(problem, efficientFrontier.trace(problem, points));
+        return new FrontierRun(problem, efficientFrontier.trace(problem, points, listener));
     }
 
     private static OptimizationRun solve(OptimizationStrategy strategy, OptimizationProblem problem) {

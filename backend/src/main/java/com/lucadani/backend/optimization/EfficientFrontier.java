@@ -1,6 +1,7 @@
 package com.lucadani.backend.optimization;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 /**
@@ -18,6 +19,16 @@ public final class EfficientFrontier {
      * portfolio has the same expected return
      */
     public List<FrontierPoint> trace(OptimizationProblem problem, int points) {
+        return trace(problem, points, ProgressListener.NONE);
+    }
+
+    /**
+     * Same as {@link #trace(OptimizationProblem, int)}, reporting each solved point to {@code listener}.
+     *
+     * @return points ordered by increasing expected return; a single point when every feasible
+     * portfolio has the same expected return
+     */
+    public List<FrontierPoint> trace(OptimizationProblem problem, int points, ProgressListener listener) {
         if (points < MIN_POINTS || points > MAX_POINTS) {
             throw new IllegalArgumentException("points must be between " + MIN_POINTS + " and " + MAX_POINTS);
         }
@@ -27,15 +38,23 @@ public final class EfficientFrontier {
                 MeanVarianceModel.of(problem).maximiseReturn()).expectedReturn();
 
         if (highReturn - lowReturn < PortfolioEvaluation.TOLERANCE) {
+            listener.onProgress(1, 1);
             return List.of(point(problem, minVariance));
         }
+
+        AtomicInteger solved = new AtomicInteger();
+        listener.onProgress(0, points);
 
         double step = (highReturn - lowReturn) / (points - 1);
         return IntStream.range(0, points)
                 .parallel()
-                .mapToObj(k -> k == 0
-                        ? point(problem, minVariance)
-                        : point(problem, minimumVarianceFor(problem, lowReturn + k * step)))
+                .mapToObj(k -> {
+                    FrontierPoint point = (k == 0)
+                            ? point(problem, minVariance)
+                            : point(problem, minimumVarianceFor(problem, lowReturn + k * step));
+                    listener.onProgress(solved.incrementAndGet(), points);
+                    return point;
+                })
                 .toList();
     }
 

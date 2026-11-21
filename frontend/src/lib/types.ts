@@ -49,6 +49,22 @@ export type AllocationResult = Omit<Strict<Schemas["AllocationResponse"]>, "posi
   positions: Position[];
 };
 
+export type OptimizationJob = WithRequired<
+  Schemas["OptimizationJobResponse"],
+  "id" | "kind" | "status" | "progress" | "createdAt"
+>;
+
+export type OptimizationJobStatus = OptimizationJob["status"];
+
+/** One "job" event of a job's server-sent event stream (OptimizationJobEvent in the backend). */
+export interface OptimizationJobEvent {
+  jobId: string;
+  status: OptimizationJobStatus;
+  /** Percentage done, 0 to 100. */
+  progress: number;
+  error?: string | null;
+}
+
 export type PortfolioSummary = Strict<Schemas["PortfolioSummaryResponse"]>;
 
 /** current* fields stay optional: they are missing when no price is known for the asset. */

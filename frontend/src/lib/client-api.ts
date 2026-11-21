@@ -19,6 +19,14 @@ export class RequestError extends Error {
   }
 }
 
+export async function apiGet<T>(path: string): Promise<T> {
+  const response = await fetch(path, { headers: { Accept: "application/json" } });
+  if (!response.ok) {
+    throw new RequestError(response.status, await problemMessage(response));
+  }
+  return (await response.json()) as T;
+}
+
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return sendJson<T>("POST", path, body);
 }
