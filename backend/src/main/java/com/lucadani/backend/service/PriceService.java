@@ -53,8 +53,23 @@ public class PriceService {
     @CacheEvict(cacheNames = StatisticsService.CACHE_NAME, allEntries = true)
     public PriceImportResponse importPrices(String symbol, List<PriceEntry> prices) {
         Asset asset = assetService.getAsset(symbol);
-        Long assetId = asset.getId();
+        return upsert(asset, prices);
+    }
 
+    /**
+     * Replaces the whole price history of an asset, e.g. with a provider's adjusted closes, which change
+     * after every dividend or split. Dates missing from {@code prices} are removed.
+     */
+    @Transactional
+    @CacheEvict(cacheNames = StatisticsService.CACHE_NAME, allEntries = true)
+    public PriceImportResponse replacePrices(String symbol, List<PriceEntry> prices) {
+        Asset asset = assetService.getAsset(symbol);
+        jdbcTemplate.update("delete from price_points where asset_id = ?", asset.getId());
+        return upsert(asset, prices);
+    }
+
+    private PriceImportResponse upsert(Asset asset, List<PriceEntry> prices) {
+        Long assetId = asset.getId();
         jdbcTemplate.batchUpdate(UPSERT_SQL, prices, BATCH_SIZE, (statement, entry) -> {
             statement.setLong(1, assetId);
             statement.setObject(2, entry.date());

@@ -27,6 +27,8 @@ import java.util.SplittableRandom;
 @RequiredArgsConstructor
 public class SimulatedMarketDataProvider implements MarketDataProvider {
 
+    public static final String NAME = "simulated";
+
     /** Starting price for an asset that has no history yet. */
     static final double DEFAULT_START_PRICE = 100;
 
@@ -34,7 +36,7 @@ public class SimulatedMarketDataProvider implements MarketDataProvider {
 
     @Override
     public String name() {
-        return "simulated";
+        return NAME;
     }
 
     @Override

@@ -31,4 +31,15 @@ public class MarketDataController {
         JobId jobId = jobScheduler.enqueue(() -> priceImportJob.importLatestPrices(JobContext.Null));
         return new ImportStartedResponse(jobId.toString());
     }
+
+    /**
+     * Replaces the price history of every asset with the provider's, in the background. Needed once after
+     * switching from simulated to real prices; portfolios saved before keep their old purchase prices.
+     */
+    @PostMapping("/reload")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ImportStartedResponse reloadHistory() {
+        JobId jobId = jobScheduler.enqueue(() -> priceImportJob.reloadHistory(JobContext.Null));
+        return new ImportStartedResponse(jobId.toString());
+    }
 }

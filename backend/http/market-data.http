@@ -21,3 +21,16 @@ GET {{jobrunrUrl}}/api/recurring-jobs
     client.test("Daily import is scheduled", () =>
         client.assert(JSON.stringify(response.body).includes("daily-price-import")));
 %}
+
+### Replace every asset's history with the provider's (once, after switching to real prices)
+POST {{baseUrl}}/api/market-data/reload
+
+> {%
+    client.test("Reload accepted", () => client.assert(response.status === 202));
+    client.global.set("reloadJobId", response.body.jobId);
+%}
+
+### The reload job (run again until its last state is SUCCEEDED)
+GET {{jobrunrUrl}}/api/jobs/{{reloadJobId}}
+
+> {% client.log("State: " + response.body.jobHistory.at(-1).state); %}

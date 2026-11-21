@@ -64,11 +64,15 @@ jobrunr:
 
 app:
   market-data:
-    # simulated: continues the price history with simulated closes (a real provider comes later)
+    # simulated: continues the price history with simulated closes; tiingo: real end-of-day prices
     provider: simulated
-    # Weekdays at 23:30, after the US markets close
-    import-cron: "30 23 * * MON-FRI"
+    # 02:00 Tuesday to Saturday: the evening after each US trading day, once end-of-day prices are published
+    import-cron: "0 2 * * TUE-SAT"
     zone-id: Europe/Bucharest
+    tiingo:
+      # Free key from tiingo.com (account settings). Read from the environment, never committed.
+      api-key: ${TIINGO_API_KEY:}
+      base-url: https://api.tiingo.com
   jobs:
     # rabbit: jobs go through RabbitMQ to whichever instance consumes them; local: run in this instance
     dispatcher: rabbit

@@ -1,9 +1,10 @@
 package com.lucadani.backend.config;
 
+import com.lucadani.backend.marketdata.MarketDataProvider;
 import com.lucadani.backend.marketdata.PriceModel;
+import com.lucadani.backend.marketdata.SimulatedMarketDataProvider;
 import com.lucadani.backend.marketdata.TradingCalendar;
 import com.lucadani.backend.model.Asset;
-import com.lucadani.backend.model.Bond;
 import com.lucadani.backend.model.Etf;
 import com.lucadani.backend.model.Stock;
 import com.lucadani.backend.repository.AssetRepository;
@@ -26,7 +27,8 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Seeds sample assets and synthetic price history for local development.
+ * Seeds sample assets for local development and, with the simulated market data provider, a synthetic
+ * price history. With a real provider only the assets are created; the price import fills their history.
  * Each asset follows its own {@link PriceModel}, driven partly by a shared market factor
  * so that assets are realistically correlated. The data is deterministic (fixed seeds).
  */
@@ -43,6 +45,7 @@ public class DevDataSeeder implements ApplicationRunner {
     private final AssetRepository assetRepository;
     private final PricePointRepository pricePointRepository;
     private final PriceService priceService;
+    private final MarketDataProvider marketDataProvider;
 
     /**
      * @param marketCorrelation correlation of the asset's daily shocks with the market factor, in [-1, 1]
@@ -60,7 +63,7 @@ public class DevDataSeeder implements ApplicationRunner {
             Asset asset = assetRepository.findBySymbol(sample.asset().getSymbol())
                     .orElseGet(() -> assetRepository.save(sample.asset()));
 
-            if (pricePointRepository.existsByAsset(asset)) {
+            if (!seedsPrices() || pricePointRepository.existsByAsset(asset)) {
                 continue;
             }
 
@@ -68,6 +71,11 @@ public class DevDataSeeder implements ApplicationRunner {
             priceService.importPrices(asset.getSymbol(), prices);
             log.info("Seeded {} prices for {}", prices.size(), asset.getSymbol());
         }
+    }
+
+    /** Synthetic prices only go with the simulated provider; a real one would mix them with market data. */
+    private boolean seedsPrices() {
+        return SimulatedMarketDataProvider.NAME.equals(marketDataProvider.name());
     }
 
     private static List<SampleAsset> sampleAssets() {
@@ -89,9 +97,9 @@ public class DevDataSeeder implements ApplicationRunner {
                 new SampleAsset(new Etf("BND", "Vanguard Total Bond Market ETF", "Bonds", "USD",
                         new BigDecimal("0.00030")),
                         72, PriceModel.meanReverting(72, 1.5, 0.06), -0.10),
-                new SampleAsset(new Bond("US10Y", "US Treasury 10 Year", "Government Bonds", "USD",
-                        new BigDecimal("0.04250"), LocalDate.of(2035, 11, 15)),
-                        98, PriceModel.meanReverting(100, 2.0, 0.07), -0.20)
+                new SampleAsset(new Etf("IEF", "iShares 7-10 Year Treasury Bond ETF", "Government Bonds", "USD",
+                        new BigDecimal("0.00150")),
+                        95, PriceModel.meanReverting(95, 1.5, 0.07), -0.20)
         );
     }
 
