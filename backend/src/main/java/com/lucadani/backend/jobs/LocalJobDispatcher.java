@@ -2,6 +2,7 @@ package com.lucadani.backend.jobs;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,7 @@ import java.util.UUID;
  * application stops is marked as interrupted by {@link OptimizationJobMaintenance}.
  */
 @Component
+@ConditionalOnProperty(name = "app.jobs.dispatcher", havingValue = "local")
 @RequiredArgsConstructor
 public class LocalJobDispatcher implements JobDispatcher {
 

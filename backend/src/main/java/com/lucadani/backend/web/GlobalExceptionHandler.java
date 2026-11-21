@@ -1,6 +1,7 @@
 package com.lucadani.backend.web;
 
 import com.lucadani.backend.exception.ConflictException;
+import com.lucadani.backend.exception.JobDispatchException;
 import com.lucadani.backend.exception.ResourceNotFoundException;
 import com.lucadani.backend.exception.NoFeasibleSolutionException;
 import org.springframework.http.*;
@@ -37,6 +38,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(NoFeasibleSolutionException.class)
     public ProblemDetail handleNoFeasibleSolution(NoFeasibleSolutionException ex) {
         return problem(HttpStatus.valueOf(422), "No feasible portfolio", ex.getMessage());
+    }
+
+    @ExceptionHandler(JobDispatchException.class)
+    public ProblemDetail handleJobDispatch(JobDispatchException ex) {
+        return problem(HttpStatus.SERVICE_UNAVAILABLE, "Service unavailable", ex.getMessage());
     }
 
     /** Domain-level validation failures raised from entity methods. */

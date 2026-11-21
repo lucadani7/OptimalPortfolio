@@ -1,5 +1,6 @@
 package com.lucadani.backend.jobs;
 
+import com.lucadani.backend.exception.JobDispatchException;
 import com.lucadani.backend.exception.ResourceNotFoundException;
 import com.lucadani.backend.model.OptimizationJob;
 import com.lucadani.backend.model.OptimizationJobKind;
@@ -47,7 +48,14 @@ public class OptimizationJobService {
 
         OptimizationJob job = repository.save(OptimizationJob.queued(
                 OptimizationJobKind.FRONTIER, jsonMapper.writeValueAsString(request), clock.instant()));
-        dispatcher.dispatch(job.getId());
+        try {
+            dispatcher.dispatch(job.getId());
+        } catch (RuntimeException e) {
+            // Not left QUEUED forever: nothing will ever run it
+            job.fail("The job could not be queued. Try again in a moment.", clock.instant());
+            repository.save(job);
+            throw new JobDispatchException("The optimization could not be started", e);
+        }
         return job;
     }
 

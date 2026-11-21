@@ -30,6 +30,11 @@ public class OptimizationJobRunner {
 
     /** Never throws once the job has started: every failure is recorded on the job. */
     public void run(UUID jobId) {
+        if (jobService.get(jobId).getStatus().isFinished()) {
+            // A message delivered twice, e.g. after a worker restart: the result is already there
+            log.info("Optimization job {} has already finished, skipping it", jobId);
+            return;
+        }
         OptimizationJob job = jobService.start(jobId);
         try {
             String resultJson = switch (job.getKind()) {

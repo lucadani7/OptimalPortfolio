@@ -3,8 +3,8 @@ package com.lucadani.backend.jobs;
 import java.util.UUID;
 
 /**
- * Hands a saved optimization job to whatever runs it. Running it in this application for now;
- * a RabbitMQ-based dispatcher will send it to a separate worker instead.
+ * Hands a saved optimization job to whatever runs it: RabbitMQ by default, or this instance
+ * (see {@code app.jobs.dispatcher}).
  */
 public interface JobDispatcher {
 

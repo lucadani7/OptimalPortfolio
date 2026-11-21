@@ -1,5 +1,6 @@
 package com.lucadani.backend.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -7,7 +8,9 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
+// Only for the web application: the worker profile runs without a web server
 @Configuration
+@ConditionalOnWebApplication
 public class SecurityConfig {
     /**
      * Temporary permissive configuration: every endpoint is public.

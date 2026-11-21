@@ -1,0 +1,21 @@
+# The optimization worker: runs jobs from RabbitMQ and reports their progress back.
+# Start it next to the API with the profiles "dev,worker" (or "prod,worker").
+spring:
+  main:
+    web-application-type: none
+    # Without a web server only virtual threads would be left, and they don't keep the JVM running
+    keep-alive: true
+
+app:
+  seed:
+    enabled: false
+  jobs:
+    consumer:
+      enabled: true
+
+# Scheduled jobs and their dashboard stay with the API
+jobrunr:
+  background-job-server:
+    enabled: false
+  dashboard:
+    enabled: false

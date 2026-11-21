@@ -18,5 +18,24 @@ services:
       timeout: 3s
       retries: 10
 
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: optimal-portfolio-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: portfolio
+      RABBITMQ_DEFAULT_PASS: portfolio
+    ports:
+      - "5672:5672"
+      # Management UI: http://localhost:15672
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
 volumes:
   postgres-data:
+  rabbitmq-data:
