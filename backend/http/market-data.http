@@ -1,0 +1,23 @@
+### Start a price import now (runs in the background)
+POST {{baseUrl}}/api/market-data/import
+
+> {%
+    client.test("Import accepted", () => client.assert(response.status === 202));
+    client.global.set("importJobId", response.body.jobId);
+%}
+
+### The import job, from the JobRunr dashboard API (run again until its state is SUCCEEDED)
+GET {{jobrunrUrl}}/api/jobs/{{importJobId}}
+
+> {%
+    client.test("Job found", () => client.assert(response.status === 200));
+    client.log("State: " + response.body.jobHistory.at(-1).state);
+%}
+
+### The daily import should be among the recurring jobs
+GET {{jobrunrUrl}}/api/recurring-jobs
+
+> {%
+    client.test("Daily import is scheduled", () =>
+        client.assert(JSON.stringify(response.body).includes("daily-price-import")));
+%}

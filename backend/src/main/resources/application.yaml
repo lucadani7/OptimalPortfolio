@@ -49,3 +49,11 @@ jobrunr:
     enabled: true
   dashboard:
     enabled: false
+
+app:
+  market-data:
+    # simulated: continues the price history with simulated closes (a real provider comes later)
+    provider: simulated
+    # Weekdays at 23:30, after the US markets close
+    import-cron: "30 23 * * MON-FRI"
+    zone-id: Europe/Bucharest

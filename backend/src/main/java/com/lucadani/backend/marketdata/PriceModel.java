@@ -1,11 +1,11 @@
-package com.lucadani.backend.config;
+package com.lucadani.backend.marketdata;
 
 /**
  * Daily price dynamics used to simulate synthetic price history.
  * Given today's price and a standard normal shock, returns tomorrow's price.
  */
 @FunctionalInterface
-interface PriceModel {
+public interface PriceModel {
 
     double TRADING_DAYS_PER_YEAR = 252.0;
     double DT = 1.0 / TRADING_DAYS_PER_YEAR;

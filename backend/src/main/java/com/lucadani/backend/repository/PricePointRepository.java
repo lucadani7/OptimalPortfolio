@@ -9,11 +9,18 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface PricePointRepository extends JpaRepository<PricePoint, Long> {
     List<PricePoint> findByAssetAndTradeDateBetweenOrderByTradeDateAsc(Asset asset, LocalDate from, LocalDate to);
 
     boolean existsByAsset(Asset asset);
+
+    /** The most recent price of an asset. */
+    Optional<PricePoint> findFirstByAssetOrderByTradeDateDesc(Asset asset);
+
+    /** The most recent price of an asset strictly before {@code date}. */
+    Optional<PricePoint> findFirstByAssetAndTradeDateBeforeOrderByTradeDateDesc(Asset asset, LocalDate date);
 
     @Query("""
         select new com.lucadani.backend.repository.PriceRow(p.asset.symbol, p.tradeDate, p.close)

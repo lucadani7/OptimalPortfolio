@@ -1,5 +1,7 @@
 package com.lucadani.backend.config;
 
+import com.lucadani.backend.marketdata.PriceModel;
+import com.lucadani.backend.marketdata.TradingCalendar;
 import com.lucadani.backend.model.Asset;
 import com.lucadani.backend.model.Bond;
 import com.lucadani.backend.model.Etf;
@@ -18,7 +20,6 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +53,7 @@ public class DevDataSeeder implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         LocalDate end = LocalDate.now().minusDays(1);
-        List<LocalDate> tradingDays = tradingDays(end.minusYears(YEARS_OF_HISTORY), end);
+        List<LocalDate> tradingDays = TradingCalendar.tradingDays(end.minusYears(YEARS_OF_HISTORY), end);
         double[] marketShocks = gaussianSeries(new Random(MARKET_SEED), tradingDays.size());
 
         for (SampleAsset sample : sampleAssets()) {
@@ -112,12 +113,6 @@ public class DevDataSeeder implements ApplicationRunner {
             prices.add(new PriceEntry(days.get(i), BigDecimal.valueOf(path[i]).setScale(6, RoundingMode.HALF_UP)));
         }
         return prices;
-    }
-
-    private static List<LocalDate> tradingDays(LocalDate start, LocalDate end) {
-        return start.datesUntil(end.plusDays(1))
-                .filter(day -> day.getDayOfWeek() != DayOfWeek.SATURDAY && day.getDayOfWeek() != DayOfWeek.SUNDAY)
-                .toList();
     }
 
     private static double[] gaussianSeries(Random random, int size) {
