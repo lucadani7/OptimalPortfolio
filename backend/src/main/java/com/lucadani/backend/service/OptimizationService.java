@@ -2,6 +2,7 @@ package com.lucadani.backend.service;
 
 import com.lucadani.backend.analytics.MarketStatistics;
 import com.lucadani.backend.model.Asset;
+import com.lucadani.backend.optimization.EfficientFrontier;
 import com.lucadani.backend.optimization.OptimizationProblem;
 import com.lucadani.backend.optimization.OptimizationResult;
 import com.lucadani.backend.optimization.OptimizationStrategy;
@@ -23,13 +24,16 @@ import java.util.stream.Collectors;
 public class OptimizationService {
     private final StatisticsService statisticsService;
     private final AssetRepository assetRepository;
+    private final EfficientFrontier efficientFrontier;
     private final Map<String, OptimizationStrategy> strategies;
 
     public OptimizationService(StatisticsService statisticsService,
                                AssetRepository assetRepository,
+                               EfficientFrontier efficientFrontier,
                                List<OptimizationStrategy> strategies) {
         this.statisticsService = statisticsService;
         this.assetRepository = assetRepository;
+        this.efficientFrontier = efficientFrontier;
         this.strategies = strategies.stream().collect(Collectors.toMap(
                 OptimizationStrategy::name,
                 Function.identity(),
@@ -46,17 +50,29 @@ public class OptimizationService {
     public OptimizationRun run(StatisticsQuery query, String strategyName,
                                List<PortfolioConstraint> constraints, double riskFreeRate) {
         OptimizationStrategy strategy = findStrategy(strategyName);
-
-        MarketStatistics statistics = statisticsService.getStatistics(query);
-        Map<String, String> sectors = assetRepository.findAllBySymbolIn(query.symbols()).stream()
-                .collect(Collectors.toMap(Asset::getSymbol, Asset::getSector));
-        OptimizationProblem problem = new OptimizationProblem(statistics, sectors, constraints, riskFreeRate);
+        OptimizationProblem problem = buildProblem(query, constraints, riskFreeRate);
 
         long start = System.nanoTime();
         double[] weights = strategy.optimize(problem);
         Duration solveTime = Duration.ofNanos(System.nanoTime() - start);
 
-        return new OptimizationRun(OptimizationResult.of(strategy.name(), problem, weights, solveTime), statistics);
+        return new OptimizationRun(OptimizationResult.of(strategy.name(), problem, weights, solveTime),
+                problem.statistics());
+    }
+
+    /** Traces the efficient frontier for the given assets, period and constraints. */
+    public FrontierRun frontier(StatisticsQuery query, List<PortfolioConstraint> constraints,
+                                double riskFreeRate, int points) {
+        OptimizationProblem problem = buildProblem(query, constraints, riskFreeRate);
+        return new FrontierRun(problem, efficientFrontier.trace(problem, points));
+    }
+
+    private OptimizationProblem buildProblem(StatisticsQuery query, List<PortfolioConstraint> constraints,
+                                             double riskFreeRate) {
+        MarketStatistics statistics = statisticsService.getStatistics(query);
+        Map<String, String> sectors = assetRepository.findAllBySymbolIn(query.symbols()).stream()
+                .collect(Collectors.toMap(Asset::getSymbol, Asset::getSector));
+        return new OptimizationProblem(statistics, sectors, constraints, riskFreeRate);
     }
 
     private OptimizationStrategy findStrategy(String name) {

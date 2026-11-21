@@ -2,6 +2,8 @@ package com.lucadani.backend.web;
 
 import com.lucadani.backend.service.OptimizationService;
 import com.lucadani.backend.service.StatisticsQuery;
+import com.lucadani.backend.web.dto.FrontierRequest;
+import com.lucadani.backend.web.dto.FrontierResponse;
 import com.lucadani.backend.web.dto.OptimizationRequest;
 import com.lucadani.backend.web.dto.OptimizationResponse;
 import com.lucadani.backend.web.dto.StrategyResponse;
@@ -34,5 +36,12 @@ public class OptimizationController {
         StatisticsQuery query = StatisticsQuery.of(request.symbols(), request.from(), request.to());
         return OptimizationResponse.of(optimizationService.run(
                 query, request.strategy(), request.domainConstraints(), request.riskFreeRateOrZero()));
+    }
+
+    @PostMapping("/frontier")
+    public FrontierResponse frontier(@Valid @RequestBody FrontierRequest request) {
+        StatisticsQuery query = StatisticsQuery.of(request.symbols(), request.from(), request.to());
+        return FrontierResponse.of(optimizationService.frontier(
+                query, request.domainConstraints(), request.riskFreeRateOrZero(), request.pointsOrDefault()));
     }
 }

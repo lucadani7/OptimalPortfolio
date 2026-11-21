@@ -76,3 +76,96 @@ Content-Type: application/json
   "symbols": [],
   "strategy": ""
 }
+
+### Minimum variance with the same constraints (feasible this time)
+POST {{baseUrl}}/api/optimization/run
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "MSFT", "VOO", "BND", "GLD"],
+  "strategy": "min-variance",
+  "riskFreeRate": 0.04,
+  "constraints": [
+    { "type": "ASSET_WEIGHT_BOUNDS", "symbol": "AAPL", "min": 0, "max": 0.1 },
+    { "type": "SECTOR_LIMIT", "sector": "Technology", "maxWeight": 0.3 },
+    { "type": "MAX_ASSETS", "count": 3 }
+  ]
+}
+
+> {%
+    client.test("Constraints respected", () => {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.feasible === true, "min-variance must respect every constraint");
+    });
+%}
+
+### Lowest risk for a target return of 8%
+POST {{baseUrl}}/api/optimization/run
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "MSFT", "JNJ", "XOM", "VOO", "BND", "GLD", "US10Y"],
+  "strategy": "min-variance",
+  "riskFreeRate": 0.04,
+  "constraints": [
+    { "type": "MIN_EXPECTED_RETURN", "value": 0.08 },
+    { "type": "WEIGHT_BOUNDS", "min": 0, "max": 0.4 }
+  ]
+}
+
+### Maximum Sharpe ratio (tangency portfolio)
+POST {{baseUrl}}/api/optimization/run
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "MSFT", "JNJ", "XOM", "VOO", "BND", "GLD", "US10Y"],
+  "strategy": "max-sharpe",
+  "riskFreeRate": 0.04,
+  "constraints": [
+    { "type": "WEIGHT_BOUNDS", "min": 0, "max": 0.4 },
+    { "type": "SECTOR_LIMIT", "sector": "Technology", "maxWeight": 0.3 }
+  ]
+}
+
+### Unreachable target return (expect 422)
+POST {{baseUrl}}/api/optimization/run
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "VOO", "BND"],
+  "strategy": "min-variance",
+  "constraints": [
+    { "type": "MIN_EXPECTED_RETURN", "value": 5.0 }
+  ]
+}
+
+### Efficient frontier (30 points)
+POST {{baseUrl}}/api/optimization/frontier
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "MSFT", "JNJ", "XOM", "VOO", "BND", "GLD", "US10Y"],
+  "riskFreeRate": 0.04,
+  "points": 30,
+  "constraints": [
+    { "type": "WEIGHT_BOUNDS", "min": 0, "max": 0.4 }
+  ]
+}
+
+> {%
+    client.test("Frontier traced", () => {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.points.length === 30, "Expected 30 points");
+        const returns = response.body.points.map(p => p.expectedReturn);
+        client.assert(returns.every((r, i) => i === 0 || r >= returns[i - 1] - 1e-6), "Returns must increase");
+    });
+%}
+
+### Too many points (expect 400)
+POST {{baseUrl}}/api/optimization/frontier
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "VOO"],
+  "points": 1000
+}

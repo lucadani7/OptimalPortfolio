@@ -2,6 +2,7 @@ package com.lucadani.backend.web;
 
 import com.lucadani.backend.exception.ConflictException;
 import com.lucadani.backend.exception.ResourceNotFoundException;
+import com.lucadani.backend.exception.NoFeasibleSolutionException;
 import org.springframework.http.*;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -30,6 +31,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ProblemDetail handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
         return problem(HttpStatus.CONFLICT, "Concurrent modification",
                 "The resource was modified by another request. Reload it and try again.");
+    }
+
+    /** A well-formed optimization request whose constraints no portfolio can satisfy. */
+    @ExceptionHandler(NoFeasibleSolutionException.class)
+    public ProblemDetail handleNoFeasibleSolution(NoFeasibleSolutionException ex) {
+        return problem(HttpStatus.valueOf(422), "No feasible portfolio", ex.getMessage());
     }
 
     /** Domain-level validation failures raised from entity methods. */
