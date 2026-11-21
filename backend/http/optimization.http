@@ -1,0 +1,78 @@
+### Available strategies
+GET {{baseUrl}}/api/optimization/strategies
+
+### Equal weight, no constraints (feasible)
+POST {{baseUrl}}/api/optimization/run
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "MSFT", "VOO", "BND", "GLD"],
+  "strategy": "equal-weight",
+  "riskFreeRate": 0.04
+}
+
+> {%
+    client.test("Equal weights", () => {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.allocations.every(a => Math.abs(a.weight - 0.2) < 1e-9), "Every weight should be 0.2");
+        client.assert(response.body.feasible === true, "No constraints, so it must be feasible");
+    });
+%}
+
+### Equal weight with constraints it breaks (feasible = false, violations listed)
+POST {{baseUrl}}/api/optimization/run
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "MSFT", "VOO", "BND", "GLD"],
+  "strategy": "equal-weight",
+  "riskFreeRate": 0.04,
+  "constraints": [
+    { "type": "ASSET_WEIGHT_BOUNDS", "symbol": "AAPL", "min": 0, "max": 0.1 },
+    { "type": "SECTOR_LIMIT", "sector": "Technology", "maxWeight": 0.3 },
+    { "type": "MAX_ASSETS", "count": 3 },
+    { "type": "MIN_EXPECTED_RETURN", "value": 0.5 }
+  ]
+}
+
+### Unknown strategy (expect 400)
+POST {{baseUrl}}/api/optimization/run
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "VOO"],
+  "strategy": "magic"
+}
+
+### Impossible bounds: 5 assets with at most 10% each (expect 400)
+POST {{baseUrl}}/api/optimization/run
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "MSFT", "VOO", "BND", "GLD"],
+  "strategy": "equal-weight",
+  "constraints": [
+    { "type": "WEIGHT_BOUNDS", "min": 0, "max": 0.1 }
+  ]
+}
+
+### Invalid constraint: min greater than max (expect 400)
+POST {{baseUrl}}/api/optimization/run
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "VOO"],
+  "strategy": "equal-weight",
+  "constraints": [
+    { "type": "WEIGHT_BOUNDS", "min": 0.8, "max": 0.2 }
+  ]
+}
+
+### Missing fields (expect 400 with field errors)
+POST {{baseUrl}}/api/optimization/run
+Content-Type: application/json
+
+{
+  "symbols": [],
+  "strategy": ""
+}
