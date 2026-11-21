@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PortfolioActions } from "@/components/PortfolioActions";
+import { Reoptimizations } from "@/components/Reoptimizations";
 import { WeightBars } from "@/components/WeightBars";
 import { ApiError, apiGet } from "@/lib/api";
 import { describeConstraint } from "@/lib/constraints";
@@ -14,7 +15,7 @@ import {
   formatTimestamp,
 } from "@/lib/format";
 import { strategyLabel } from "@/lib/strategies";
-import type { Holding, Portfolio } from "@/lib/types";
+import type { Holding, Portfolio, Reoptimization } from "@/lib/types";
 
 interface PortfolioPageProps {
   params: Promise<{ id: string }>;
@@ -55,6 +56,7 @@ function tone(amount: number): string {
 export default async function PortfolioPage({ params }: PortfolioPageProps) {
   const { id } = await params;
   const portfolio = await getPortfolio(id);
+  const reoptimizations = await apiGet<Reoptimization[]>(`/api/portfolios/${id}/reoptimizations`);
   const { valuation } = portfolio;
   const holdingsValue = portfolio.holdings.reduce((sum, holding) => sum + value(holding), 0);
 
@@ -199,6 +201,12 @@ export default async function PortfolioPage({ params }: PortfolioPageProps) {
           </div>
         </section>
       </div>
+
+      <Reoptimizations
+        portfolioId={portfolio.id}
+        schedule={portfolio.reoptimizationSchedule ?? null}
+        history={reoptimizations}
+      />
     </div>
   );
 }

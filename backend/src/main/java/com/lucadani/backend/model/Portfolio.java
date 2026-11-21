@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
+import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -52,6 +53,15 @@ public class Portfolio {
     @Column(nullable = false)
     private String constraintsJson;
 
+    /** The symbols the optimization chose from, as JSON; null for portfolios saved before it was kept. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    private @Nullable String symbolsJson;
+
+    /** How often the portfolio is reoptimized on its own; null when it is not. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private @Nullable ReoptimizationSchedule reoptimizationSchedule;
+
     @Version
     private long version;
 
@@ -68,7 +78,7 @@ public class Portfolio {
     private List<Holding> holdings = new ArrayList<>();
 
     public Portfolio(String name, String strategy, BigDecimal budget, BigDecimal invested, BigDecimal leftover,
-                     PortfolioMetrics metrics, String constraintsJson) {
+                     PortfolioMetrics metrics, String constraintsJson, String symbolsJson) {
         rename(name);
         this.strategy = Objects.requireNonNull(strategy, "strategy must not be null");
         if (budget.signum() <= 0) {
@@ -85,6 +95,12 @@ public class Portfolio {
         this.leftover = leftover;
         this.metrics = Objects.requireNonNull(metrics, "metrics must not be null");
         this.constraintsJson = Objects.requireNonNull(constraintsJson, "constraintsJson must not be null");
+        this.symbolsJson = Objects.requireNonNull(symbolsJson, "symbolsJson must not be null");
+    }
+
+    /** Sets how often the portfolio is reoptimized on its own; null stops it. */
+    public void scheduleReoptimization(@Nullable ReoptimizationSchedule schedule) {
+        this.reoptimizationSchedule = schedule;
     }
 
     public void rename(String name) {

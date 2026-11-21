@@ -3,6 +3,7 @@ package com.lucadani.backend.web.dto;
 import com.lucadani.backend.model.Holding;
 import com.lucadani.backend.model.Portfolio;
 import com.lucadani.backend.model.PortfolioMetrics;
+import com.lucadani.backend.model.ReoptimizationSchedule;
 import com.lucadani.backend.repository.PriceRow;
 import org.jspecify.annotations.Nullable;
 
@@ -33,6 +34,7 @@ public record PortfolioResponse(
         List<ConstraintRequest> constraints,
         List<HoldingResponse> holdings,
         Valuation valuation,
+        @Nullable ReoptimizationSchedule reoptimizationSchedule,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -94,6 +96,7 @@ public record PortfolioResponse(
                 constraints,
                 holdings,
                 new Valuation(currentValue, profitLoss, returnRate),
+                portfolio.getReoptimizationSchedule(),
                 portfolio.getCreatedAt(),
                 portfolio.getUpdatedAt()
         );

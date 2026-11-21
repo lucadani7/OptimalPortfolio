@@ -2,6 +2,7 @@ package com.lucadani.backend.service;
 
 import com.lucadani.backend.analytics.MarketStatistics;
 import com.lucadani.backend.exception.ResourceNotFoundException;
+import com.lucadani.backend.jobs.ReoptimizationJob;
 import com.lucadani.backend.model.Asset;
 import com.lucadani.backend.model.Portfolio;
 import com.lucadani.backend.model.PortfolioMetrics;
@@ -18,6 +19,7 @@ import com.lucadani.backend.web.dto.CreatePortfolioRequest;
 import com.lucadani.backend.web.dto.PortfolioResponse;
 import com.lucadani.backend.web.dto.PortfolioSummaryResponse;
 import lombok.RequiredArgsConstructor;
+import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
@@ -44,6 +46,7 @@ public class PortfolioService {
     private final AssetRepository assetRepository;
     private final PricePointRepository pricePointRepository;
     private final JsonMapper jsonMapper;
+    private final JobScheduler jobScheduler;
 
     public List<PortfolioSummaryResponse> findAll() {
         return portfolioRepository.findAllByOrderByCreatedAtDesc().stream()
@@ -87,7 +90,8 @@ public class PortfolioService {
                 money(allocation.invested()),
                 money(allocation.leftover()),
                 metrics,
-                jsonMapper.writerFor(CONSTRAINT_LIST).writeValueAsString(constraints));
+                jsonMapper.writerFor(CONSTRAINT_LIST).writeValueAsString(constraints),
+                jsonMapper.writeValueAsString(result.symbols()));
 
         Map<String, Asset> assets = assetRepository.findAllBySymbolIn(allocation.symbols()).stream()
                 .collect(Collectors.toMap(Asset::getSymbol, Function.identity()));
@@ -117,6 +121,7 @@ public class PortfolioService {
     @Transactional
     public void delete(Long id) {
         portfolioRepository.delete(getPortfolio(id));
+        jobScheduler.deleteRecurringJob(ReoptimizationJob.recurringJobId(id));
     }
 
     private Portfolio getPortfolio(Long id) {

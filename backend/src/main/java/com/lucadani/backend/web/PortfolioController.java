@@ -1,10 +1,14 @@
 package com.lucadani.backend.web;
 
 import com.lucadani.backend.service.PortfolioService;
+import com.lucadani.backend.service.ReoptimizationService;
 import com.lucadani.backend.web.dto.CreatePortfolioRequest;
 import com.lucadani.backend.web.dto.PortfolioResponse;
 import com.lucadani.backend.web.dto.PortfolioSummaryResponse;
 import com.lucadani.backend.web.dto.RenamePortfolioRequest;
+import com.lucadani.backend.web.dto.ReoptimizationResponse;
+import com.lucadani.backend.web.dto.ScheduleRequest;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +27,7 @@ import java.util.List;
 public class PortfolioController {
 
     private final PortfolioService portfolioService;
+    private final ReoptimizationService reoptimizationService;
 
     @GetMapping
     public List<PortfolioSummaryResponse> list() {
@@ -47,7 +52,28 @@ public class PortfolioController {
         return portfolioService.rename(id, request.name());
     }
 
-    @DeleteMapping("/{id}")
+    @Operation(summary = "Set how often the portfolio is reoptimized on its own")
+    @PutMapping("/{id}/schedule")
+    public PortfolioResponse schedule(@PathVariable Long id, @RequestBody ScheduleRequest request) {
+        reoptimizationService.schedule(id, request.frequency());
+        return portfolioService.findById(id);
+    }
+
+    @Operation(summary = "The latest reoptimizations of the portfolio, newest first")
+    @GetMapping("/{id}/reoptimizations")
+    public List<ReoptimizationResponse> reoptimizations(@PathVariable Long id) {
+        return reoptimizationService.history(id);
+    }
+
+    @Operation(summary = "Reoptimize the portfolio now, on the latest prices",
+            description = "The outcome is saved either way; a run that cannot satisfy the rules has status FAILED.")
+    @PostMapping("/{id}/reoptimizations")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ReoptimizationResponse reoptimize(@PathVariable Long id) {
+        return reoptimizationService.reoptimize(id);
+    }
+
+        @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         portfolioService.delete(id);

@@ -73,8 +73,22 @@ export type Holding = WithRequired<
   "symbol" | "name" | "shares" | "purchasePrice" | "priceDate" | "targetWeight" | "cost"
 >;
 
-export type Portfolio = Omit<Strict<Schemas["PortfolioResponse"]>, "holdings" | "valuation" | "constraints"> & {
+export type ReoptimizationSchedule = NonNullable<Schemas["ScheduleRequest"]["frequency"]>;
+
+export type Portfolio = Omit<
+  Strict<Schemas["PortfolioResponse"]>,
+  "holdings" | "valuation" | "constraints" | "reoptimizationSchedule"
+> & {
   constraints: ConstraintRequest[];
   holdings: Holding[];
   valuation: Strict<Schemas["Valuation"]>;
+  /** Missing or null when the portfolio is not reoptimized on its own. */
+  reoptimizationSchedule?: ReoptimizationSchedule | null;
+};
+
+export type WeightChange = Strict<Schemas["WeightChange"]>;
+
+/** The figures and turnover are missing when the run failed; error is set instead. */
+export type Reoptimization = Omit<WithRequired<Schemas["ReoptimizationResponse"], "id" | "status" | "createdAt">, "changes"> & {
+  changes: WeightChange[];
 };

@@ -1,0 +1,57 @@
+### Save a portfolio to reoptimize
+POST {{baseUrl}}/api/portfolios
+Content-Type: application/json
+
+{
+  "name": "Reoptimization test",
+  "allocation": {
+    "symbols": ["AAPL", "MSFT", "JNJ", "XOM", "VOO", "BND"],
+    "strategy": "max-sharpe",
+    "constraints": [{ "type": "WEIGHT_BOUNDS", "min": 0, "max": 0.4 }],
+    "riskFreeRate": 0.04,
+    "budget": 10000
+  }
+}
+
+> {% client.global.set("reoptimizedPortfolioId", response.body.id); %}
+
+### Reoptimize now: same assets and rules, prices up to today
+POST {{baseUrl}}/api/portfolios/{{reoptimizedPortfolioId}}/reoptimizations
+
+> {%
+    client.test("Reoptimized", () => {
+        client.assert(response.status === 201);
+        client.assert(response.body.status === "SUCCEEDED", "Status: " + response.body.status);
+        client.assert(response.body.turnover >= 0 && response.body.turnover <= 1);
+    });
+%}
+
+### History, newest first
+GET {{baseUrl}}/api/portfolios/{{reoptimizedPortfolioId}}/reoptimizations
+
+### Reoptimize every Monday (a recurring job appears in the JobRunr dashboard)
+PUT {{baseUrl}}/api/portfolios/{{reoptimizedPortfolioId}}/schedule
+Content-Type: application/json
+
+{ "frequency": "WEEKLY" }
+
+> {% client.test("Scheduled", () => client.assert(response.body.reoptimizationSchedule === "WEEKLY")); %}
+
+### The recurring job, from the JobRunr dashboard API
+GET {{jobrunrUrl}}/api/recurring-jobs
+
+> {%
+    client.test("Recurring job exists", () => client.assert(
+        JSON.stringify(response.body).includes("reoptimize-portfolio-" + client.global.get("reoptimizedPortfolioId"))));
+%}
+
+### Stop the schedule
+PUT {{baseUrl}}/api/portfolios/{{reoptimizedPortfolioId}}/schedule
+Content-Type: application/json
+
+{ "frequency": null }
+
+> {% client.test("Unscheduled", () => client.assert(response.body.reoptimizationSchedule == null)); %}
+
+### Clean up
+DELETE {{baseUrl}}/api/portfolios/{{reoptimizedPortfolioId}}

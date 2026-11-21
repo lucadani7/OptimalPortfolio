@@ -20,6 +20,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/portfolios/{id}/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set how often the portfolio is reoptimized on its own */
+        put: operations["schedule"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/assets/{symbol}": {
         parameters: {
             query?: never;
@@ -46,6 +63,27 @@ export interface paths {
         get: operations["list"];
         put?: never;
         post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/portfolios/{id}/reoptimizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The latest reoptimizations of the portfolio, newest first */
+        get: operations["reoptimizations"];
+        put?: never;
+        /**
+         * Reoptimize the portfolio now, on the latest prices
+         * @description The outcome is saved either way; a run that cannot satisfy the rules has status FAILED.
+         */
+        post: operations["reoptimize"];
         delete?: never;
         options?: never;
         head?: never;
@@ -316,6 +354,8 @@ export interface components {
             constraints?: (components["schemas"]["AssetWeightBoundsRequest"] | components["schemas"]["MaxAssetsRequest"] | components["schemas"]["MinExpectedReturnRequest"] | components["schemas"]["SectorLimitRequest"] | components["schemas"]["WeightBoundsRequest"])[];
             holdings?: components["schemas"]["HoldingResponse"][];
             valuation?: components["schemas"]["Valuation"];
+            /** @enum {string} */
+            reoptimizationSchedule?: "WEEKLY" | "MONTHLY";
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -349,6 +389,10 @@ export interface components {
              * @enum {string}
              */
             type: "WEIGHT_BOUNDS";
+        };
+        ScheduleRequest: {
+            /** @enum {string} */
+            frequency?: "WEEKLY" | "MONTHLY";
         };
         UpdateAssetRequest: {
             name: string;
@@ -395,6 +439,35 @@ export interface components {
         CreatePortfolioRequest: {
             name: string;
             allocation: components["schemas"]["AllocationRequest"];
+        };
+        ReoptimizationResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** @enum {string} */
+            status?: "SUCCEEDED" | "FAILED";
+            error?: string;
+            /** Format: double */
+            expectedReturn?: number;
+            /** Format: double */
+            volatility?: number;
+            /** Format: double */
+            sharpeRatio?: number;
+            /** Format: date */
+            statisticsFrom?: string;
+            /** Format: date */
+            statisticsTo?: string;
+            /** Format: double */
+            turnover?: number;
+            changes?: components["schemas"]["WeightChange"][];
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        WeightChange: {
+            symbol?: string;
+            /** Format: double */
+            currentWeight?: number;
+            /** Format: double */
+            targetWeight?: number;
         };
         OptimizationRequest: {
             symbols: string[];
@@ -714,6 +787,32 @@ export interface operations {
             };
         };
     };
+    schedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PortfolioResponse"];
+                };
+            };
+        };
+    };
     get_1: {
         parameters: {
             query?: never;
@@ -822,6 +921,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PortfolioResponse"];
+                };
+            };
+        };
+    };
+    reoptimizations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReoptimizationResponse"][];
+                };
+            };
+        };
+    };
+    reoptimize: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReoptimizationResponse"];
                 };
             };
         };
