@@ -84,7 +84,8 @@ public final class DiscreteAllocator {
         int[] capCents = new int[n];
         int[] maxShares = new int[n];
         for (int i = 0; i < n; i++) {
-            priceCents[i] = Math.max(1, (int) Math.round(prices[i] * 100));
+            // Rounding prices up keeps the real cost within the budget whatever the sub-cent part of a price
+            priceCents[i] = Math.max(1, (int) Math.ceil(prices[i] * 100 - 1e-9));
             targetCents[i] = (int) Math.round(targetWeights[i] * budgetCents);
             capCents[i] = (int) Math.floor(Math.min(1.0, maxWeights[i]) * budgetCents);
             maxShares[i] = targetWeights[i] > PortfolioEvaluation.HOLDING_THRESHOLD ? capCents[i] / priceCents[i] : 0;
@@ -249,7 +250,7 @@ public final class DiscreteAllocator {
         double invested = 0;
         double[] actualWeights = new double[n];
         for (int i = 0; i < n; i++) {
-            double amount = shares[i] * Math.round(prices[i] * 100) / 100.0;
+            double amount = shares[i] * prices[i];
             invested += amount;
             actualWeights[i] = amount / budget;
         }

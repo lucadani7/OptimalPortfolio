@@ -4,6 +4,7 @@ import com.lucadani.backend.exception.ConflictException;
 import com.lucadani.backend.exception.ResourceNotFoundException;
 import com.lucadani.backend.model.*;
 import com.lucadani.backend.repository.AssetRepository;
+import com.lucadani.backend.repository.HoldingRepository;
 import com.lucadani.backend.web.dto.AssetResponse;
 import com.lucadani.backend.web.dto.CreateAssetRequest;
 import com.lucadani.backend.web.dto.UpdateAssetRequest;
@@ -22,6 +23,7 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class AssetService {
     private final AssetRepository assetRepository;
+    private final HoldingRepository holdingRepository;
 
     public List<AssetResponse> findAll(AssetType type) {
         return Optional.ofNullable(type)
@@ -86,7 +88,13 @@ public class AssetService {
     @Transactional
     @CacheEvict(cacheNames = StatisticsService.CACHE_NAME, allEntries = true)
     public void delete(String symbol) {
-        assetRepository.delete(getAsset(symbol));
+        Asset asset = getAsset(symbol);
+        long holdings = holdingRepository.countByAsset(asset);
+        if (holdings > 0) {
+            throw new ConflictException("Asset '" + asset.getSymbol() + "' is held in " + holdings
+                    + " portfolio(s); delete those portfolios first");
+        }
+        assetRepository.delete(asset);
     }
 
     public Asset getAsset(String symbol) {

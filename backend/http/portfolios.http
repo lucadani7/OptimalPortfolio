@@ -1,0 +1,60 @@
+### Create a portfolio: 10,000 USD following the max-Sharpe portfolio
+POST {{baseUrl}}/api/portfolios
+Content-Type: application/json
+
+{
+  "name": "Balanced growth",
+  "allocation": {
+    "symbols": ["AAPL", "MSFT", "JNJ", "XOM", "VOO", "BND", "GLD", "US10Y"],
+    "strategy": "max-sharpe",
+    "riskFreeRate": 0.04,
+    "budget": 10000,
+    "constraints": [
+      { "type": "WEIGHT_BOUNDS", "min": 0, "max": 0.4 },
+      { "type": "SECTOR_LIMIT", "sector": "Technology", "maxWeight": 0.3 }
+    ]
+  }
+}
+
+> {%
+    client.test("Portfolio created", () => {
+        client.assert(response.status === 201, "Expected HTTP 201");
+        client.assert(response.body.holdings.length > 0, "Expected holdings");
+        client.assert(response.body.constraints.length === 2, "Constraints must be saved");
+    });
+    client.global.set("portfolioId", response.body.id);
+%}
+
+### List portfolios
+GET {{baseUrl}}/api/portfolios
+
+### Portfolio details with current valuation
+GET {{baseUrl}}/api/portfolios/{{portfolioId}}
+
+### Rename
+PUT {{baseUrl}}/api/portfolios/{{portfolioId}}
+Content-Type: application/json
+
+{
+  "name": "Balanced growth (2026)"
+}
+
+### Deleting an asset that is held (expect 409)
+DELETE {{baseUrl}}/api/assets/BND
+
+### Missing name and allocation (expect 400)
+POST {{baseUrl}}/api/portfolios
+Content-Type: application/json
+
+{
+  "name": ""
+}
+
+### Unknown portfolio (expect 404)
+GET {{baseUrl}}/api/portfolios/999999
+
+### Delete the portfolio
+DELETE {{baseUrl}}/api/portfolios/{{portfolioId}}
+
+### The deleted portfolio is gone (expect 404)
+GET {{baseUrl}}/api/portfolios/{{portfolioId}}
