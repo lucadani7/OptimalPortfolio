@@ -24,4 +24,15 @@ public interface PricePointRepository extends JpaRepository<PricePoint, Long> {
     List<PriceRow> findRows(@Param("symbols") Collection<String> symbols,
                             @Param("from") LocalDate from,
                             @Param("to") LocalDate to);
+
+    /** The most recent price of every asset on or before {@code date}. Assets without such a price are absent. */
+    @Query("""
+        select new com.lucadani.backend.repository.PriceRow(p.asset.symbol, p.tradeDate, p.close)
+        from PricePoint p
+        where p.asset.symbol in :symbols
+          and p.tradeDate = (select max(q.tradeDate) from PricePoint q
+                             where q.asset = p.asset and q.tradeDate <= :date)
+        """)
+    List<PriceRow> findLatestRows(@Param("symbols") Collection<String> symbols,
+                                  @Param("date") LocalDate date);
 }

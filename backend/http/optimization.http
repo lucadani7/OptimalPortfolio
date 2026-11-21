@@ -169,3 +169,45 @@ Content-Type: application/json
   "symbols": ["AAPL", "VOO"],
   "points": 1000
 }
+
+### Whole shares for 10,000 USD, following the max-Sharpe portfolio
+POST {{baseUrl}}/api/optimization/allocate
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "MSFT", "JNJ", "XOM", "VOO", "BND", "GLD", "US10Y"],
+  "strategy": "max-sharpe",
+  "riskFreeRate": 0.04,
+  "budget": 10000,
+  "constraints": [
+    { "type": "WEIGHT_BOUNDS", "min": 0, "max": 0.4 },
+    { "type": "SECTOR_LIMIT", "sector": "Technology", "maxWeight": 0.3 }
+  ]
+}
+
+> {%
+    client.test("Allocation within budget", () => {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.invested <= 10000, "Must not exceed the budget");
+        client.assert(response.body.positions.every(p => Number.isInteger(p.shares)), "Shares must be whole numbers");
+    });
+%}
+
+### Small budget: expensive assets become hard to match
+POST {{baseUrl}}/api/optimization/allocate
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "MSFT", "VOO", "BND", "GLD"],
+  "strategy": "min-variance",
+  "budget": 500
+}
+
+### Missing budget (expect 400)
+POST {{baseUrl}}/api/optimization/allocate
+Content-Type: application/json
+
+{
+  "symbols": ["AAPL", "VOO"],
+  "strategy": "equal-weight"
+}

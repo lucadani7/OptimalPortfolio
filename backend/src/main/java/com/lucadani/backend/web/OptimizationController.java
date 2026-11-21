@@ -2,6 +2,8 @@ package com.lucadani.backend.web;
 
 import com.lucadani.backend.service.OptimizationService;
 import com.lucadani.backend.service.StatisticsQuery;
+import com.lucadani.backend.web.dto.AllocationRequest;
+import com.lucadani.backend.web.dto.AllocationResponse;
 import com.lucadani.backend.web.dto.FrontierRequest;
 import com.lucadani.backend.web.dto.FrontierResponse;
 import com.lucadani.backend.web.dto.OptimizationRequest;
@@ -36,6 +38,14 @@ public class OptimizationController {
         StatisticsQuery query = StatisticsQuery.of(request.symbols(), request.from(), request.to());
         return OptimizationResponse.of(optimizationService.run(
                 query, request.strategy(), request.domainConstraints(), request.riskFreeRateOrZero()));
+    }
+
+    @PostMapping("/allocate")
+    public AllocationResponse allocate(@Valid @RequestBody AllocationRequest request) {
+        StatisticsQuery query = StatisticsQuery.of(request.symbols(), request.from(), request.to());
+        return AllocationResponse.of(optimizationService.allocate(
+                query, request.strategy(), request.domainConstraints(), request.riskFreeRateOrZero(),
+                request.budget()));
     }
 
     @PostMapping("/frontier")

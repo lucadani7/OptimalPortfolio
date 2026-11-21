@@ -1,5 +1,6 @@
 package com.lucadani.backend.config;
 
+import com.lucadani.backend.optimization.DiscreteAllocator;
 import com.lucadani.backend.optimization.EfficientFrontier;
 import com.lucadani.backend.optimization.EqualWeightStrategy;
 import com.lucadani.backend.optimization.MaxSharpeStrategy;
@@ -14,6 +15,11 @@ public class OptimizationConfig {
     @Bean
     public EfficientFrontier efficientFrontier() {
         return new EfficientFrontier();
+    }
+
+    @Bean
+    public DiscreteAllocator discreteAllocator() {
+        return new DiscreteAllocator();
     }
 
     @Bean
