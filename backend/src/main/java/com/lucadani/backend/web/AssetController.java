@@ -8,6 +8,7 @@ import com.lucadani.backend.web.dto.UpdateAssetRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +25,7 @@ public class AssetController {
     private final AssetService assetService;
 
     @GetMapping
-    public List<AssetResponse> list(@RequestParam(required = false) AssetType type) {
+    public List<AssetResponse> list(@RequestParam @Nullable AssetType type) {
         return assetService.findAll(type);
     }
 
