@@ -2,6 +2,8 @@ package com.lucadani.backend.web.dto;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -15,6 +17,12 @@ import java.time.LocalDate;
         @JsonSubTypes.Type(value = CreateAssetRequest.StockRequest.class, name = "STOCK"),
         @JsonSubTypes.Type(value = CreateAssetRequest.EtfRequest.class, name = "ETF"),
         @JsonSubTypes.Type(value = CreateAssetRequest.BondRequest.class, name = "BOND")
+})
+// Tells the OpenAPI generator the real discriminator values ("STOCK", not "StockRequest")
+@Schema(discriminatorProperty = "type", discriminatorMapping = {
+        @DiscriminatorMapping(value = "STOCK", schema = CreateAssetRequest.StockRequest.class),
+        @DiscriminatorMapping(value = "ETF", schema = CreateAssetRequest.EtfRequest.class),
+        @DiscriminatorMapping(value = "BOND", schema = CreateAssetRequest.BondRequest.class)
 })
 public sealed interface CreateAssetRequest {
     String symbol();
